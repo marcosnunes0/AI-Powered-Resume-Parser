@@ -1,0 +1,1 @@
+This folder will receive the CVs downloaded via Google Drive API request when executing the "download_cv.py" file.
