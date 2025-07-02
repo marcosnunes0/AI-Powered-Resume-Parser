@@ -8,7 +8,7 @@ class AnalyzeDatabase(TinyDB):
         self.jobs = self.table('jobs')
         self.resums = self.table('resums')
         self.analysis = self.table('analysis')
-        self.files = self.tables('files')
+        self.files = self.table('files')
 
     # Searches for a specific job by its respective name in the database
     def get_job_by_name(self, name):
@@ -23,7 +23,7 @@ class AnalyzeDatabase(TinyDB):
         return result[0] if result else None
     
     # Searches for candidate analysis based on job_id
-    def get_analysis_by_job_id(self, job_id)
+    def get_analysis_by_job_id(self, job_id):
         analysis = Query()
         result = self.analysis.search(analysis.job_id == job_id)
         return result
