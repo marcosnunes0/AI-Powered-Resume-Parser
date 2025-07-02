@@ -16,7 +16,7 @@ class AnalyzeDatabase(TinyDB):
         result = self.jobs.search(job.name == name)
         return result[0] if result else None
 
-    # Searches for resume summaries by resum_id
+    # Searches for resum summaries by resum_id
     def get_resum_by_id(self, id):
         resum = Query()
         result = self.resum.search(resum.id == id)
@@ -28,6 +28,12 @@ class AnalyzeDatabase(TinyDB):
         result = self.analysis.search(analysis.job_id == job_id)
         return result
 
+    # Searches for resums summaries by job_id
+    def get_resums_by_job_id(self, job_id):
+        resum = Query()
+        result = self.resums.search(resum.job_id == job_id)
+        return result
+    
     # Deletes all resums from a job_id
     def delete_all_resums_by_job_id(self, job_id):
         resum = Query()
