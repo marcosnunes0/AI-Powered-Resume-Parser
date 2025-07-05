@@ -6,7 +6,7 @@ class Analysis(BaseModel):
     job_id: str
     resume_id: str
     name: str
-    skills: List(str)
-    education: List(str)
-    language: List(str)
+    skills: List[str]
+    education: List[str]
+    language: List[str]
     score: float
