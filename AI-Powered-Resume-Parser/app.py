@@ -62,12 +62,12 @@ if option:
     response = AgGrid(
         df,
         gridOptions=grid_options,
-        enable_enterprise_modules=True, # Enable enterprise features
-        update_mode=GridUpdateMode.COLUMN_CHANGED,
+        enable_enterprise_modules=True,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,
         theme='streamlit'
     )
     
-    selected_candidates = response.get('select_rows', [])
+    selected_candidates = response.get('selected_rows', [])
     candidates_df = pd.DataFrame(selected_candidates)
     
     resums = database.get_resums_by_job_id(job.get('id'))
@@ -86,19 +86,28 @@ if option:
         
     
     if not candidates_df.empty:
-        cols = st.columns(len(candidates_df))
-        for idx, row in enumerate(candidates_df.iterrows()):
+        for idx, row in candidates_df.iterrows():
             with st.container():
-                if resum_data := database.get_resum_by_id(row[1]['Resum_id']):
+                st.subheader(f"Analysis for: {row['Name']}")
+                if resum_data := database.get_resum_by_id(row['Resum_id']):
+                    st.markdown("### Resume Content")
                     st.markdown(resum_data.get('content'))
-                    st.markdown(resum_data.get('opnion'))
+                    st.markdown("### Opinion")
+                    st.markdown(resum_data.get('opinion'))
                     
-                    with open(resum_data.get('file'), 'rb') as file:
-                        pdf_data = file.read()
-                        
-                        st.download_button(
-                            label=f'CV Download {row[1]['Name']}',
-                            data=pdf_data,
-                            file_name=f"{row[1]['Name']}.pdf",
-                            mime='application/pdf'
-                        )
+                    try:
+                        with open(resum_data.get('file'), 'rb') as file:
+                            pdf_data = file.read()
+                            
+                            st.download_button(
+                                label=f"Download CV {row['Name']}",
+                                data=pdf_data,
+                                file_name=f"{row['Name']}.pdf",
+                                mime='application/pdf',
+                                key=f"download_{row['ID']}"
+                            )
+                    except (FileNotFoundError, TypeError):
+                        st.error(f"CV file not found for {row['Name']}.")
+                else:
+                    st.warning(f"No resum details found for {row['Name']}.")
+                st.divider()
