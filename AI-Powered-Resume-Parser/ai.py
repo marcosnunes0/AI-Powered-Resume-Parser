@@ -109,10 +109,13 @@ class GroqClient:
             if '/' in score_str:
                 score_str = score_str.split('/')[0]
             
-            return float(score_str.replace(',', '.'))
+            try:
+                return float(score_str.replace(',', '.'))
+            except ValueError:
+                return None
         return None
     
-    def generate_opnion(self, cv, job):
+    def generate_opinion(self, cv, job):
         """
         Generates a critical and detailed review of a CV in relation to a job description.
         The review includes points of alignment, misalignment, and attention.
