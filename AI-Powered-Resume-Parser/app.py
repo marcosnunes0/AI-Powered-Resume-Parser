@@ -86,10 +86,10 @@ if option:
         
     
     if not candidates_df.empty:
-        cols = st.colums(len(candidates_df))
+        cols = st.columns(len(candidates_df))
         for idx, row in enumerate(candidates_df.iterrows()):
             with st.container():
-                if resum_data := database.get_resum_by_id(row(1)['Resum_id']):
+                if resum_data := database.get_resum_by_id(row[1]['Resum_id']):
                     st.markdown(resum_data.get('content'))
                     st.markdown(resum_data.get('opnion'))
                     
@@ -97,8 +97,8 @@ if option:
                         pdf_data = file.read()
                         
                         st.download_button(
-                            label=f'CV Download {row(1)['Name']}',
+                            label=f'CV Download {row[1]['Name']}',
                             data=pdf_data,
-                            file_name=f'{row(1)['Name']}.pdf',
+                            file_name=f"{row[1]['Name']}.pdf",
                             mime='application/pdf'
                         )

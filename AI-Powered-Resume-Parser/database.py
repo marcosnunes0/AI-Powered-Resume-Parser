@@ -19,7 +19,7 @@ class AnalyzeDatabase(TinyDB):
     # Searches for resum summaries by resum_id
     def get_resum_by_id(self, id):
         resum = Query()
-        result = self.resum.search(resum.id == id)
+        result = self.resums.search(resum.id == id)
         return result[0] if result else None
     
     # Searches for candidate analysis based on job_id

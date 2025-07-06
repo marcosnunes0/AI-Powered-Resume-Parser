@@ -46,7 +46,7 @@ def extract_data_analysis(resum_cv, job_id, resum_id, score):
         "name": r"(?:## Full Name\s*|Full Name\s*|\s*Valor\s*|\s*\S*\s*|\s*)(.*)",
         "skills": r"## Skills\s*([\s\S]*?)(?=##|$)",
         "education": r"## Education\s*([\s\S]*?)(?=##|$)",
-        "languages": r"## Language\s*([\s\S]*?)(?=##|$)",
+        "languages": r"## Languages\s*([\s\S]*?)(?=##|$)",
     }
     
     def clean_string(string: str) -> str:
