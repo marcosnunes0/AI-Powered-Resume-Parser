@@ -5,6 +5,7 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from database import AnalyzeDatabase
 from models.job import Job
+from ai_analysis import run_analysis
 
 database = AnalyzeDatabase()
 
@@ -22,7 +23,7 @@ with st.sidebar:
 
     page = st.radio(
         "Menu",
-        ["🏠 Home", "📝 Register Job", "📊 Analysis"],
+        ["🏠 Home", "📝 Register Job", "⚙️ Manage Jobs", "📊 Analysis"],
     )
 
     st.divider()
@@ -85,7 +86,7 @@ if page == "🏠 Home":
     st.divider()
     st.caption("Built with Streamlit, Groq API & Python")
 
-# Regiter Job Page
+# Register Job Page
 elif page == "📝 Register Job":
     st.title("📝 Register a New Job Vacancy")
     st.write("Fill in the details below to create a new position for candidate analysis.")
@@ -156,6 +157,129 @@ elif page == "📝 Register Job":
                 st.success("✅ Job vacancy successfully registered.")
                 st.balloons()
 
+# Manage Jobs Page
+elif page == "⚙️ Manage Jobs":
+    st.title("⚙️ Manage Jobs")
+    st.write("Select a job vacancy to view its details, edit or delete it.")
+
+    st.divider()
+
+    jobs_list = database.jobs.all()
+
+    if not jobs_list:
+        st.info("📭 No job vacancies registered yet. Go to **Register Job** to create one.")
+    else:
+        option = st.selectbox(
+            'Select a job vacancy:',
+            [job.get('name') for job in jobs_list],
+            index=None,
+        )
+
+        if option:
+            job = database.get_job_by_name(option)
+
+            # Edit Job
+            with st.expander("✏️ Edit Job", expanded=False):
+                with st.form(key="edit_job_form"):
+                    new_name = st.text_input(
+                        "Job Title",
+                        value=job.get('name', ''),
+                    )
+
+                    new_activities = st.text_area(
+                        "Main Activities",
+                        value=job.get('main_activities', '').strip(),
+                        height=150,
+                    )
+
+                    new_prerequisites = st.text_area(
+                        "Prerequisites",
+                        value=job.get('prerequisites', '').strip(),
+                        height=150,
+                    )
+
+                    new_diferentials = st.text_area(
+                        "Differentials",
+                        value=job.get('diferentials', '').strip(),
+                        height=150,
+                    )
+
+                    update_submitted = st.form_submit_button("💾 Save Changes", use_container_width=True)
+
+                if update_submitted:
+                    if not new_name.strip():
+                        st.error("⚠️ The **Job Title** field is required.")
+                    elif not new_activities.strip():
+                        st.error("⚠️ The **Main Activities** field is required.")
+                    elif not new_prerequisites.strip():
+                        st.error("⚠️ The **Prerequisites** field is required.")
+                    else:
+                        # Check for duplicate name only if name changed
+                        if new_name.strip() != job.get('name'):
+                            existing = database.get_job_by_name(new_name.strip())
+                            if existing:
+                                st.warning("⚠️ A job vacancy with this name already exists.")
+                                st.stop()
+
+                        database.update_job_by_id(job.get('id'), {
+                            'name': new_name.strip(),
+                            'main_activities': new_activities.strip(),
+                            'prerequisites': new_prerequisites.strip(),
+                            'diferentials': new_diferentials.strip(),
+                        })
+                        st.success("✅ Job vacancy updated successfully.")
+                        st.rerun()
+
+            st.divider()
+
+            # Job Details
+            with st.container(border=True):
+                st.subheader(f"📌 {job.get('name')}")
+
+                st.markdown("**Main Activities:**")
+                st.text(job.get('main_activities', '').strip())
+
+                st.markdown("**Prerequisites:**")
+                st.text(job.get('prerequisites', '').strip())
+
+                st.markdown("**Differentials:**")
+                st.text(job.get('diferentials', '').strip())
+
+            # Related data counts
+            analyses_count = len(database.get_analysis_by_job_id(job.get('id')))
+            resums_count = len(database.get_resums_by_job_id(job.get('id')))
+
+            if analyses_count > 0 or resums_count > 0:
+                st.warning(
+                    f"⚠️ This job has **{analyses_count}** analysis(es) and "
+                    f"**{resums_count}** resume(s) associated. "
+                    f"Deleting it will also remove all related data."
+                )
+
+            st.divider()
+
+            # Delete with confirmation
+            col1, col2 = st.columns([1, 5])
+            with col1:
+                delete_clicked = st.button("🗑️ Delete Job", type="primary")
+
+            if delete_clicked:
+                st.session_state["confirm_delete"] = job.get('id')
+
+            if st.session_state.get("confirm_delete") == job.get('id'):
+                st.error(f"Are you sure you want to delete **{job.get('name')}**? This action cannot be undone.")
+                col_yes, col_no, _ = st.columns([1, 1, 6])
+                with col_yes:
+                    if st.button("✅ Yes, delete"):
+                        database.delete_job_by_id(job.get('id'))
+                        st.session_state.pop("confirm_delete", None)
+                        st.success("✅ Job vacancy deleted successfully.")
+                        st.rerun()
+                with col_no:
+                    if st.button("❌ Cancel"):
+                        st.session_state.pop("confirm_delete", None)
+                        st.rerun()
+                        
 # Analysis Page
 elif page == "📊 Analysis":
     st.title("📊 Candidate Analysis")
@@ -169,13 +293,28 @@ elif page == "📊 Analysis":
         st.info("📭 No job vacancies registered yet. Go to **Register Job** to create one.")
     else:
         option = st.selectbox(
-            'Escolha uma vaga:',
+            'Choose a vacancy:',
             [job.get('name') for job in jobs_list],
             index=None,
         )
 
         if option:
             job = database.get_job_by_name(option)
+
+            # Run AI Analysis button
+            if st.button('🤖 Run AI Analysis', use_container_width=False):
+                try:
+                    with st.spinner('Analyzing CVs with AI... This may take a few minutes.'):
+                        run_analysis(job)
+                    st.success('✅ AI analysis completed successfully!')
+                    st.rerun()
+                except FileNotFoundError:
+                    st.error('⚠️ No PDF files found in the **CVs** directory. Please add CVs before running the analysis.')
+                except Exception as e:
+                    st.error(f'⚠️ An error occurred during analysis: {e}')
+
+            st.divider()
+
             data = database.get_analysis_by_job_id(job.get('id'))
 
             df = pd.DataFrame(

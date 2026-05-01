@@ -48,3 +48,16 @@ class AnalyzeDatabase(TinyDB):
     def delete_all_files_by_job_id(self, job_id):
         file = Query()
         self.files.remove(file.job_id == job_id)
+
+    # Deletes a job and all its associated data (resums, analysis, files)
+    def delete_job_by_id(self, job_id):
+        job = Query()
+        self.delete_all_resums_by_job_id(job_id)
+        self.delete_all_analysis_by_job_id(job_id)
+        self.delete_all_files_by_job_id(job_id)
+        self.jobs.remove(job.id == job_id)
+
+    # Updates a job's fields by its id
+    def update_job_by_id(self, job_id, fields):
+        job = Query()
+        self.jobs.update(fields, job.id == job_id)
