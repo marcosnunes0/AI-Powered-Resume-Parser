@@ -1,6 +1,13 @@
+import os
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.credentials import Credentials
+from dotenv import load_dotenv
+from Pathlib import Path
+
+env_path = Path(__file__).parent.parent / '.env'
+
+load_dotenv(dotenv_path=env_path)
 
 # Access scope
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
@@ -12,7 +19,7 @@ creds = Credentials.from_authorized_user_file("token.json", SCOPES)
 service = build("drive", "v3", credentials=creds)
 
 # ID of the folder you want to list files in
-folder_id = "1BrxlOOIjjBgBfoh_zVA_wKTrbanXalOg"
+folder_id = os.getenv['FOLDER_ID']
 
 # List files in the folder specified by folder_id
 results = service.files().list(
@@ -26,7 +33,6 @@ if not files:
     raise FileNotFoundError('not files in results')
 else:
     for file in files:
-        
         # Download each file on the drive
         requests = service.files().get_media(fileId=file['id'])
         file_path = f'./CVs/{file['name']}' # Defines the path where to save the file
