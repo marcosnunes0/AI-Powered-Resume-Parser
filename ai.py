@@ -18,13 +18,13 @@ class GroqClient:
         Summarizes a CV by extracting key information and formatting it in Markdown.
         """
         prompt = f'''
-        Resum CV Request in Markdown:
+        Summarize CV Request in Markdown:
 
-        Candidate resum to summarize:
+        Candidate resume to summarize:
 
         {cv}
 
-        Please generate a summary of the provided resum, formatted in Markdown, strictly following the template below.
+        Please generate a summary of the provided resume, formatted in Markdown, strictly following the template below.
         Do not add extra sections, tables or any other type of formatting other than that specified.
         Fill out each section with the relevant information, ensuring that the summary is accurate and focused.
 
