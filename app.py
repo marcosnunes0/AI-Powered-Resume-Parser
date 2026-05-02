@@ -6,6 +6,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from database import AnalyzeDatabase
 from models.job import Job
 from ai_analysis import run_analysis
+from helper import generate_analysis_pdf
 
 database = AnalyzeDatabase()
 
@@ -54,14 +55,14 @@ if page == "🏠 Home":
     col1, col2 = st.columns(2)
 
     with col1:
-        with st.container(border=True):
+        with st.container(border=True, height=150):
             st.subheader("📝 1. Register a Job")
             st.write(
                 "Define the position, main activities, prerequisites, "
                 "and differentials through the form in page **Register Job**."
             )
 
-        with st.container(border=True):
+        with st.container(border=True, height=150):
             st.subheader("🤖 3. AI Analysis")
             st.write(
                 "The **Groq AI** engine summarizes, scores, and generates detailed "
@@ -69,14 +70,14 @@ if page == "🏠 Home":
             )
 
     with col2:
-        with st.container(border=True):
+        with st.container(border=True, height=150):
             st.subheader("📄 2. Upload CVs")
             st.write(
                 "Place candidate PDF resumes in the CVs folder or download "
                 "them directly from Google Drive."
             )
 
-        with st.container(border=True):
+        with st.container(border=True, height=150):
             st.subheader("📊 4. View Rankings")
             st.write(
                 "Explore interactive charts and tables ranking candidates "
@@ -366,15 +367,6 @@ elif page == "📊 Analysis":
             selected_candidates = response.get('selected_rows', [])
             candidates_df = pd.DataFrame(selected_candidates)
 
-            resums = database.get_resums_by_job_id(job.get('id'))
-
-            # Function to delete resume files from the filesystem
-            def delete_files_resum(resums):
-                for resum in resums:
-                    path = resum.get('file')
-                    if os.path.isfile(path):
-                        os.remove(path)
-
             if st.button('Clear Analysis'):
                 database.delete_all_resums_by_job_id(job.get('id'))
                 database.delete_all_analysis_by_job_id(job.get('id'))
@@ -390,19 +382,39 @@ elif page == "📊 Analysis":
                             st.markdown("### Opinion")
                             st.markdown(resum_data.get('opinion'))
 
-                            try:
-                                with open(resum_data.get('file'), 'rb') as file:
-                                    pdf_data = file.read()
+                            col_cv, col_export = st.columns(2)
 
-                                    st.download_button(
-                                        label=f"Download CV {row['Name']}",
-                                        data=pdf_data,
-                                        file_name=f"{row['Name']}.pdf",
-                                        mime='application/pdf',
-                                        key=f"download_{row['ID']}"
-                                    )
-                            except (FileNotFoundError, TypeError):
-                                st.error(f"CV file not found for {row['Name']}.")
+                            with col_cv:
+                                try:
+                                    with open(resum_data.get('file'), 'rb') as file:
+                                        pdf_data = file.read()
+
+                                        st.download_button(
+                                            label=f"📄 Download {row['Name']}'s CV",
+                                            data=pdf_data,
+                                            file_name=f"{row['Name']}.pdf",
+                                            mime='application/pdf',
+                                            key=f"download_{row['ID']}",
+                                            use_container_width=True,
+                                        )
+                                except (FileNotFoundError, TypeError):
+                                    st.error(f"CV file not found for {row['Name']}.")
+
+                            with col_export:
+                                analysis_pdf = generate_analysis_pdf(
+                                    candidate_name=row['Name'],
+                                    content=resum_data.get('content', ''),
+                                    opinion=resum_data.get('opinion', ''),
+                                    score=row['Score'],
+                                )
+                                st.download_button(
+                                    label=f"📊 Export Analysis",
+                                    data=analysis_pdf,
+                                    file_name=f"Analysis_{row['Name']}.pdf",
+                                    mime='application/pdf',
+                                    key=f"export_{row['ID']}",
+                                    use_container_width=True,
+                                )
                         else:
                             st.warning(f"No resum details found for {row['Name']}.")
                     st.divider()

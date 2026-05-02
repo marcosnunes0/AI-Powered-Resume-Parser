@@ -1,4 +1,4 @@
-import re, uuid, os
+import re, uuid, os, io
 import fitz
 from models.analysis import Analysis
 
@@ -68,3 +68,114 @@ def extract_data_analysis(resum_cv, job_id, resum_id, score):
             raise ValueError(f"The section '{key}' cannot be empty or contain only empty strings.")
 
     return Analysis(**sections_dict)
+
+# Generate a PDF from the analysis data
+def generate_analysis_pdf(candidate_name, content, opinion, score):
+    doc = fitz.open()
+    font_size_title = 16
+    font_size_heading = 13
+    font_size_body = 10
+    margin = 50
+    line_height = font_size_body * 1.4
+
+    def add_page(doc):
+        page = doc.new_page(width=595, height=842)  # A4
+        return page, margin + 40  # return page and starting y position
+
+    page, y = add_page(doc)
+    page_width = page.rect.width
+    usable_width = page_width - 2 * margin
+
+    # Title
+    page.insert_text(
+        fitz.Point(margin, y),
+        f"AI Analysis Report: {candidate_name}",
+        fontsize=font_size_title,
+        fontname="helv",
+        color=(0.1, 0.1, 0.5),
+    )
+    y += 30
+
+    # Score
+    page.insert_text(
+        fitz.Point(margin, y),
+        f"Score: {score}",
+        fontsize=font_size_heading,
+        fontname="helv",
+        color=(0.2, 0.2, 0.2),
+    )
+    y += 25
+
+    # Draw a separator line
+    page.draw_line(
+        fitz.Point(margin, y),
+        fitz.Point(page_width - margin, y),
+        color=(0.7, 0.7, 0.7), width=0.5
+    )
+    y += 15
+
+    sections = [
+        ("Resume Summary", content),
+        ("AI Opinion", opinion),
+    ]
+
+    for title, text in sections:
+        # Section heading
+        if y > 780:
+            page, y = add_page(doc)
+        page.insert_text(
+            fitz.Point(margin, y),
+            title,
+            fontsize=font_size_heading,
+            fontname="helv",
+            color=(0.15, 0.15, 0.4),
+        )
+        y += 20
+
+        # Section body: write line by line
+        clean_text = (text or '').strip()
+        for line in clean_text.split('\n'):
+            # Strip markdown formatting characters
+            line = line.replace('**', '').replace('###', '').replace('##', '').replace('#', '').replace('*', '').strip()
+            if not line:
+                y += line_height * 0.5
+                continue
+
+            # Word-wrap long lines
+            words = line.split()
+            current_line = ''
+            for word in words:
+                test = f"{current_line} {word}".strip()
+                text_width = fitz.get_text_length(test, fontname="helv", fontsize=font_size_body)
+                if text_width > usable_width:
+                    if y > 790:
+                        page, y = add_page(doc)
+                    page.insert_text(
+                        fitz.Point(margin, y),
+                        current_line,
+                        fontsize=font_size_body,
+                        fontname="helv",
+                    )
+                    y += line_height
+                    current_line = word
+                else:
+                    current_line = test
+
+            if current_line:
+                if y > 790:
+                    page, y = add_page(doc)
+                page.insert_text(
+                    fitz.Point(margin, y),
+                    current_line,
+                    fontsize=font_size_body,
+                    fontname="helv",
+                )
+                y += line_height
+
+        y += 10  # spacing between sections
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    doc.close()
+    buffer.seek(0)
+    return buffer.getvalue()
