@@ -1,83 +1,133 @@
 # 🚀 AI Powered Resume Parser
 
-> A lightweight web app that leverages free AI (Llama 3.3 via Grok API) to score, summarize and critique PDF resumes based on a selected job vacancy.
+> An intelligent web application that leverages AI (Llama 3.3 70B via Groq API) to score, summarize and critically analyze PDF resumes against a selected job vacancy all through an intuitive Streamlit interface.
 
 ---
 
-## ✨ Core Features
-• **Resume Scoring** – AI‑driven ranking by job‑fit.  
-• **Summary Generation** – Concise overview of each CV.  
-• **Descriptive Critique** – Highlights strengths, misalignments & improvement areas.  
-• **Downloadable CVs** – One‑click PDF retrieval.
+## ✨ Features
 
-All powered by a Streamlit front‑end, TinyDB storage, Google Drive integration, and LangChain–Grok AI.
+| Feature | Description |
+|---|---|
+| 📝 **Job Registration** | Create job vacancies directly from the UI with title, activities, prerequisites, and differentials. |
+| ⚙️ **Job Management** | View, edit, and delete existing vacancies with a confirmation step to prevent accidental deletions. |
+| 🤖 **AI-Powered Analysis** | Trigger the full CV analysis pipeline from the interface. The AI summarizes, scores and generates a detailed critical opinion for each candidate. |
+| 📊 **Interactive Ranking** | Visualize candidate rankings through bar charts and an interactive table with sorting and multi-selection. |
+| 📄 **CV Download** | Download the original PDF resume for any selected candidate with one click. |
+| 📊 **Export Analysis PDF** | Export a formatted PDF report containing the AI's summary and opinion for each candidate. |
+| ☁️ **Google Drive Integration** | Optionally download candidate CVs directly from a Google Drive folder. |
 
 ---
 
 ## 🛠️ Tech Stack
-![Python](https://img.shields.io/badge/Python->=3.11-05122A?logo=python&style=flat) ![Streamlit](https://img.shields.io/badge/Streamlit-UI-05122A?logo=streamlit&style=flat) ![TinyDB](https://img.shields.io/badge/TinyDB-NoSQL-05122A?logo=approov&style=flat) ![Google Drive](https://img.shields.io/badge/Google_Drive-API-05122A?logo=googledrive&style=flat) ![PaimuPDF](https://img.shields.io/badge/PaimuPDF-PDF_Parsing-05122A?style=flat)
-![Llama3](https://img.shields.io/badge/Llama_3.3-70B-05122A?style=flat) ![GrokAPI](https://img.shields.io/badge/Grok_API-LangChain-05122A?style=flat)
+
+![Python](https://img.shields.io/badge/Python->=3.11-05122A?logo=python&style=flat) ![Streamlit](https://img.shields.io/badge/Streamlit-UI-05122A?logo=streamlit&style=flat) ![TinyDB](https://img.shields.io/badge/TinyDB-NoSQL-05122A?logo=approov&style=flat) ![Google Drive](https://img.shields.io/badge/Google_Drive-API-05122A?logo=googledrive&style=flat) ![PyMuPDF](https://img.shields.io/badge/PyMuPDF-PDF_Parsing-05122A?style=flat)
+![Llama3](https://img.shields.io/badge/Llama_3.3-70B-05122A?style=flat) ![GroqAPI](https://img.shields.io/badge/Groq_API-LangChain-05122A?style=flat)
+
+| Technology | Purpose |
+|---|---|
+| **Streamlit** | Web interface |
+| **LangChain + Groq** | AI integration (model: `llama-3.3-70b-versatile`) |
+| **TinyDB** | Lightweight JSON-based NoSQL database (`db.json`) |
+| **PyMuPDF (fitz)** | PDF text extraction and PDF report generation |
+| **Pydantic** | Data validation and schema modeling |
+| **Pandas + AgGrid** | Data manipulation and interactive table rendering |
+| **Google Drive API** | Optional cloud-based CV retrieval |
+
+---
 
 ## 💻 Architecture & Flow
 
 ```
-┌──────────────────┐      ┌───────────────┐      ┌──────────────┐
-│ Google Drive API │ ──→  │   Helper      │ ──→  │    AI Layer  │
-│  (download CVs)  │      │ (read_pdf,    │      │ (ChatGrok →  │
-└──────────────────┘      │  TinyDB)      │      │  Llama 3.3)  │
-                          └───────────────┘      └──────────────┘
-                                     ↓                     ↓
-                                ┌──────────┐          ┌───────────┐
-                                │ Database │          │ Streamlit │
-                                │ (TinyDB) │          │  Front‑end│
-                                └──────────┘          └───────────┘
+                          ┌─────────────────────────────────────────┐
+                          │           Streamlit Interface            │
+                          │  ┌──────┬───────────┬────────┬────────┐ │
+                          │  │ Home │ Register  │ Manage │Analysis│ │
+                          │  │      │   Job     │  Jobs  │        │ │
+                          │  └──────┴───────────┴────────┴────────┘ │
+                          └──────────────┬──────────────────────────┘
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                    ▼                    ▼                    ▼
+           ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+           │   Database   │    │  AI Analysis │    │  PDF Export  │
+           │   (TinyDB)   │    │  (LangChain  │    │  (PyMuPDF)   │
+           │   db.json    │    │  + Groq API) │    │              │
+           └──────────────┘    └──────────────┘    └──────────────┘
+                                       ▲
+                                       │
+                               ┌───────────────┐
+                               │   Helper      │
+                               │  (read_pdf,   │
+                               │   extract)    │
+                               └───────┬───────┘
+                                       ▲
+                          ┌────────────┴────────────┐
+                          ▼                         ▼
+                 ┌──────────────┐          ┌──────────────┐
+                 │  Local CVs   │          │ Google Drive  │
+                 │  (CVs/)      │          │  (download)   │
+                 └──────────────┘          └──────────────┘
 ```
+
+---
 
 ## 📂 Project Structure
 
 ```bash
 ai-powered-resume-parser/
-├── AI-Powered-Resume-Parser/
-│   ├── drive/                  # Google Drive integration
-|   |   ├── authenticate.py     # OAuth2 setup for Drive API
-|   |   └── download_cv.py      # Downloads resumes from Drive
-│   ├── models/                 # Pydantic schemas (job, resum, analysis, file)
-│   ├── ai.py                   # Groq API integration
-│   ├── ai_analysis.py          # CV processing pipeline
-│   ├── app.py                  # Streamlit UI
-│   ├── create_job.py           # Vacancy creation
-│   ├── database.py             # TinyDB operations
-│   └── helper.py               # PDF utilities
-├── CVs/                        # Downloaded PDF CVs at runtime
-├── db.json                     # Database file
-├── requirements.txt            # Dependencies
-├── LICENSE
-└── README.md
+├── CVs/                       # PDF resumes directory (populated at runtime)
+├── drive/                     # Google Drive integration
+│   ├── authenticate.py        # OAuth2 setup for Drive API
+│   └── download_cv.py         # Downloads resumes from Drive
+├── models/                    # Pydantic data schemas
+│   ├── analysis.py            # Analysis model (name, skills, score, etc.)
+│   ├── file.py                # File tracking model
+│   ├── job.py                 # Job vacancy model
+│   └── resum.py               # Resume summary model
+├── ai.py                      # Groq API client (summarize, score, opinion)
+├── ai_analysis.py             # CV processing pipeline (run_analysis function)
+├── app.py                     # Streamlit application (main UI)
+├── database.py                # TinyDB database operations (CRUD)
+├── helper.py                  # PDF utilities (read_pdf, generate_analysis_pdf)
+├── create_job.py              # Legacy script for manual job creation
+├── db.json                    # TinyDB database file
+├── requirements.txt           # Python dependencies
+├── .env                       # Environment variables (API keys)
+├── LICENSE                    # MIT License
+└── README.md                  # This file
 ```
+
+---
 
 ## ⚙️ Setup & Installation
 
-**Prerequisites**
+### Prerequisites
 
-- Python 3.11+
+- **Python 3.11+** installed on your system
+- A **Groq API Key** (free at [console.groq.com](https://console.groq.com))
+- *(Optional)* Google Cloud credentials for Drive integration
 
-- Groq API Key (free account)
-
-**Installation Steps**
+### Step-by-Step
 
 **1. Clone the repository:**
 
 ```bash
-git clone https://github.com/marcosnunes0/ai-powered-resume-parser.git
-cd ai-powered-resume-parser
+git clone https://github.com/marcosnunes0/AI-Powered-Resume-Parser.git
+cd AI-Powered-Resume-Parser
 ```
 
-**2. Create and activate virtual environment:**
+**2. Create and activate a virtual environment:**
 
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate    # Windows
+```
+
+```bash
+# Linux / macOS
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
 ```
 
 **3. Install dependencies:**
@@ -88,74 +138,88 @@ pip install -r requirements.txt
 
 **4. Configure environment variables:**
 
-```bash
-echo "GROQ_API_KEY=your_api_key_here" > .env
+Create a `.env` file in the project root with the following content:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+FOLDER_ID=your_google_drive_folder_id_here
 ```
 
-**5. Set up Google Drive integration:**
+> **Note:** `FOLDER_ID` is only required if you plan to use the Google Drive integration to download CVs automatically. If you will place CVs manually in the `CVs/` folder, you can omit it.
 
-- Create a Google service account and enable the Drive API.
+**5. *(Optional)* Set up Google Drive integration:**
 
-- Download ```credentials.json``` and place it in the project root.
+If you want to download CVs from Google Drive:
 
-- Run authentication script:
-
-```bash
-python AI-Powered-Resume-Parser/drive/authenticate.py
-```
-
-## ▶️ Usage
-
-<details> <summary>1. Create Job Vacancy</summary>
+- Create a project in [Google Cloud Console](https://console.cloud.google.com) and enable the **Google Drive API**.
+- Create OAuth 2.0 credentials and download the `credentials.json` file.
+- Place `credentials.json` in the project root directory.
+- Run the authentication script to generate `token.json`:
 
 ```bash
-python AI-Powered-Resume-Parser/create_job.py
+python drive/authenticate.py
 ```
 
-Generates the vacancy in the ```db.jason``` database
+**6. Add candidate CVs:**
 
-Obs: Before running the script to actually create the job, it is necessary to change the desired characteristics of the job in the ```create_job.py``` file.
-</details>
-
-<details> <summary>2. Authenticate & Download CVs</summary>
-
-**Option A: From Google Drive**
+Place PDF resume files in the `CVs/` directory, or download them from Google Drive:
 
 ```bash
-python AI-Powered-Resume-Parser/drive/authenticate.py
-python AI-Powered-Resume-Parser/drive/download_cv.py
+python drive/download_cv.py
 ```
 
-**Option B: Manual Placement**
-
-Place PDF resumes in the CVs/ directory
-
-Obs: Both option A procedure and option B procedure will populate the CVs/ folder with applicant PDFs.
-</details>
-
-<details> <summary>3. Run AI Analysis</summary>
+**7. Launch the application:**
 
 ```bash
-python AI-Powered-Resume-Parser/ai_analysis.py
+streamlit run app.py
 ```
 
-Generates summaries, scores, critiques and stores results in ```db.json```.
-</details>
+The application will open automatically in your browser at `http://localhost:8501`.
 
-<details> <summary>4. Launch Streamlit App</summary>
+---
 
-```bash
-streamlit run ./AI-Powered-Resume-Parser/app.py
-```
+## ▶️ Usage Guide
 
-- Open your browser at http://localhost:8501
+### 🏠 Home
 
-- Select a job vacancy
+The landing page provides:
+- An overview of system statistics (registered jobs, summaries, and analyses).
+- A step-by-step guide explaining how the application works.
 
-- Select the candidates from the table whose summaries and reviews you want to see
+### 📝 Register Job
 
-- Download original resums with one click
-</details>
+1. Navigate to **Register Job** in the sidebar.
+2. Fill in the form fields:
+   - **Job Title** - Name of the vacancy (e.g., "Senior Software Engineer Vacancy").
+   - **Main Activities** - Key responsibilities for the position.
+   - **Prerequisites** - Required qualifications and experience.
+   - **Differentials** - Desired extra skills and certifications.
+3. Click **Register** to save the vacancy to the database.
+
+### ⚙️ Manage Jobs
+
+1. Navigate to **Manage Jobs** in the sidebar.
+2. Select a vacancy from the dropdown to view its full details.
+3. **Edit**: Expand the "✏️ Edit Job" section, modify the fields, and click **💾 Save Changes**.
+4. **Delete**: Click **🗑️ Delete Job**, then confirm the action. All associated analyses and resumes will also be removed.
+
+### 📊 Analysis
+
+1. Navigate to **Analysis** in the sidebar.
+2. Select a job vacancy from the dropdown.
+3. Click **🤖 Run AI Analysis** to start the AI pipeline. A loading spinner will indicate progress while the AI processes all CVs found in the `CVs/` directory.
+4. Once complete, the results are displayed:
+   - **Bar chart** ranking all candidates by score.
+   - **Interactive table** with sortable columns and multi-selection checkboxes.
+5. Select one or more candidates from the table to see:
+   - The AI-generated **resume summary**.
+   - The AI-generated **critical opinion** (strengths, misalignments, points of attention).
+6. For each selected candidate, two download buttons are available:
+   - **📄 Download CV** - Downloads the original PDF resume.
+   - **📊 Export Analysis** - Downloads a formatted PDF report with the AI analysis.
+7. Click **Clear Analysis** to remove all analysis data for the selected vacancy.
+
+---
 
 ## 🤝 Contributing
 
@@ -163,23 +227,24 @@ Contributions and feedback are welcome!
 
 1. Fork the repository
 
-2. Create a feature branch (```git checkout -b feature/YourFeature```)
+2. Create a feature branch (`git checkout -b feature/YourFeature`)
 
-3. Commit your changes (```git commit -m "Add feature"```)
+3. Commit your changes (`git commit -m "Add feature"`)
 
-4. Push to your branch (```git push origin feature/YourFeature```)
+4. Push to your branch (`git push origin feature/YourFeature`)
 
 5. Open a Pull Request
 
+---
+
 ## ⚠️ Known Limitations
 
-- Requires consistent PDF formatting for optimal parsing
+- Requires consistent PDF formatting for optimal text extraction
+- AI accuracy and score consistency depend on Groq API performance and the LLM model
+- Google Drive authentication is required for cloud-based CV retrieval
+- Score variability may occur with complex or creatively formatted resumes
 
-- Accuracy depends on Groq API performance
-
-- Google Drive authentication needed for cloud integration
-
-- Score variability with complex/creative resumes
+---
 
 ## 📄 License
 
