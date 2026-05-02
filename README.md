@@ -39,7 +39,7 @@
 
 ```
                           ┌─────────────────────────────────────────┐
-                          │           Streamlit Interface            │
+                          │           Streamlit Interface           │
                           │  ┌──────┬───────────┬────────┬────────┐ │
                           │  │ Home │ Register  │ Manage │Analysis│ │
                           │  │      │   Job     │  Jobs  │        │ │
